@@ -16,11 +16,14 @@ public:
         this->onButtonSelectHandler.ptmf = &ExpWFCMain::ExtOnButtonSelect;
     }
     void OnInit() override;
+    void BeforeControlUpdate() override;
 private:
     void OnSettingsButtonClick(PushButton& PushButton, u32 r5);
     void ExtOnButtonSelect(PushButton& pushButton, u32 hudSlotId);
     PtmfHolder_2A<ExpWFCMain, void, PushButton&, u32> onSettingsClick;
     PushButton settingsButton;
+    LayoutUIControl playerCount;
+    LayoutUIControl rankInfo;
 public:
     PulPageId topSettingsPage;
 };
@@ -32,7 +35,7 @@ public:
         this->onModeButtonClickHandler.ptmf = &ExpWFCModeSel::OnModeButtonClick;
     }
     void OnInit() override;
-    // void BeforeControlUpdate() override;
+    void BeforeControlUpdate() override;
     static void InitButton(ExpWFCModeSel& self);
     static void OnActivatePatch();
     static void ClearModeContexts();

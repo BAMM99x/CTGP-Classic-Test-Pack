@@ -2,7 +2,7 @@
 #include <MarioKartWii/RKSYS/RKSYSMgr.hpp>
 #include <Settings/UI/ExpWFCMainPage.hpp>
 #include <UI/UI.hpp>
-#include <PulsarSystem.hpp>
+#include <UI/PlayerCount.hpp>
 
 namespace Pulsar {
 namespace UI {
@@ -13,7 +13,7 @@ kmWrite24(0x80899a36, 'PUL'); //8064ba38
 kmWrite24(0x80899a5B, 'PUL'); //8064ba90
 
 void ExpWFCMain::OnInit() {
-    this->InitControlGroup(6); //5 controls usually + settings button
+    this->InitControlGroup(8); //5 controls usually + settings button (5) + playerCount (6) + rankInfo (7)
     WFCMainMenu::OnInit();
     this->AddControl(5, settingsButton, 0);
 
@@ -22,9 +22,33 @@ void ExpWFCMain::OnInit() {
     this->settingsButton.SetOnClickHandler(this->onSettingsClick, 0);
     this->settingsButton.SetOnSelectHandler(this->onButtonSelectHandler);
 
-    this->topSettingsPage = SettingsPanel::id;
+    this->AddControl(6, playerCount, 0);
+    ControlLoader loader(&this->playerCount);
+    loader.Load(UI::buttonFolder, "PlayerButton", "VRButton", nullptr);
+    for (int i = 0; i < 4; ++i) {
+        this->playerCount.positionAndscale[i].position.x = 0.0f;
+    }
+    this->playerCount.SetPosition(0.0f);
 
-    // this->manipulatorManager.SetGlobalHandler(START_PRESS, this->onStartPress, false, false);
+    this->AddControl(7, rankInfo, 0);
+    ControlLoader rankLoader(&this->rankInfo);
+    rankLoader.Load(UI::buttonFolder, "RankButton", "VRButton", nullptr);
+    this->rankInfo.isHidden = true;
+
+    this->topSettingsPage = SettingsPanel::id;
+}
+
+void ExpWFCMain::BeforeControlUpdate() {
+    WFCMainMenu::BeforeControlUpdate();
+
+    int nTotal = 0;
+    PlayerCount::GetNumbersTotal(nTotal);
+
+    Text::Info info;
+    info.intToPass[0] = nTotal;
+    this->playerCount.SetTextBoxMessage("go", BMG_PLAYER_COUNT, &info);
+
+    this->rankInfo.isHidden = true;
 }
 
 void ExpWFCMain::OnSettingsButtonClick(PushButton& pushButton, u32 r5) {
@@ -49,6 +73,22 @@ kmWrite32(0x8064c284, 0x38800001); //distance func
 void ExpWFCModeSel::OnInit() {
     WFCModeSelect::OnInit();
     // this->manipulatorManager.SetGlobalHandler(START_PRESS, this->onStartPress, false, false);
+}
+
+void ExpWFCModeSel::BeforeControlUpdate() {
+    WFCModeSelect::BeforeControlUpdate();
+
+    int nVS, n200cc, nOTT, nIR, nBattle;
+    PlayerCount::GetNumbers(nVS, n200cc, nOTT, nIR, nBattle);
+
+    Text::Info info;
+    info.intToPass[0] = nVS;
+    this->vsButton.SetTextBoxMessage("go", BMG_PLAYER_COUNT, &info);
+
+    info.intToPass[0] = nOTT;
+    this->ottButton.SetTextBoxMessage("go", BMG_PLAYER_COUNT, &info);
+
+    this->battleButton.SetTextBoxMessage("go", 0x1402, nullptr);
 }
 
 void ExpWFCModeSel::InitButton(ExpWFCModeSel& self) {
