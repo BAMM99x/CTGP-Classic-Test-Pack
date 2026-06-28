@@ -294,4 +294,7 @@
   7901  = KOs will occur every 2 races.
   7902  = KOs will occur every 3 races.
   7903  = KOs will occur every 4 races.
+  217b = \z{a02,1000000000}\z{800,46} players
+  285e = \z{a02,1000000000}\z{800,46}VR
+  6969 = \z{a02,1000000000}\z{800,46}BR
   

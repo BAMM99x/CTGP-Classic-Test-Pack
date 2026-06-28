@@ -44,6 +44,7 @@ public:
     void OnModeButtonClick(PushButton& PushButton, u32 r5);
 
     PushButton ottButton;
+    LayoutUIControl vrButton;
     u32 lastClickedButton;
     u32 region;
     static const u32 ottButtonId = 4;

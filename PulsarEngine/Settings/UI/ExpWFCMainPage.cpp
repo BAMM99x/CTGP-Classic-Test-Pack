@@ -3,6 +3,7 @@
 #include <Settings/UI/ExpWFCMainPage.hpp>
 #include <UI/UI.hpp>
 #include <UI/PlayerCount.hpp>
+#include <core/nw4r/lyt/Pane.hpp>
 
 namespace Pulsar {
 namespace UI {
@@ -89,10 +90,35 @@ void ExpWFCModeSel::BeforeControlUpdate() {
     this->ottButton.SetTextBoxMessage("go", BMG_PLAYER_COUNT, &info);
 
     this->battleButton.SetTextBoxMessage("go", 0x1402, nullptr);
+
+    // Update VR rating button
+    RKSYS::Mgr* rksysMgr = RKSYS::Mgr::sInstance;
+    u32 vr = 0;
+    u32 br = 5000;
+    if(rksysMgr->curLicenseId >= 0) {
+        RKSYS::LicenseMgr& license = rksysMgr->licenses[rksysMgr->curLicenseId];
+        vr = license.vr.points;
+        br = license.br.points;
+    }
+    Text::Info vrInfo;
+    vrInfo.intToPass[0] = this->battleButton.IsSelected() ? br : vr;
+    u32 bmgId = this->battleButton.IsSelected() ? 0x6969 : 0x285e;
+    this->vrButton.SetTextBoxMessage("go", bmgId, &vrInfo);
+
+    // Force pane visibility and position to override animator defaults
+    nw4r::lyt::Pane* capsul = this->vrButton.layout.GetPaneByName("capsul_null");
+    if (capsul != nullptr) {
+        capsul->alpha = 255;
+        capsul->effectiveAlpha = 255;
+        capsul->trans.y = 190.0f;
+        capsul->trans.x = 240.0f;
+        capsul->scale.x = 0.8f;
+        capsul->scale.z = 0.8f;
+    }
 }
 
 void ExpWFCModeSel::InitButton(ExpWFCModeSel& self) {
-    self.InitControlGroup(6);
+    self.InitControlGroup(7);
 
     self.region = 0x36B;  // Store region in the page class instead
     self.AddControl(5, self.ottButton, 0);
@@ -101,6 +127,17 @@ void ExpWFCModeSel::InitButton(ExpWFCModeSel& self) {
     self.ottButton.SetOnClickHandler(self.onModeButtonClickHandler, 0);
     self.ottButton.SetOnSelectHandler(self.onButtonSelectHandler);
     
+    self.AddControl(6, self.vrButton, 0);
+    ControlLoader loader(&self.vrButton);
+    loader.Load(UI::buttonFolder, "VRButton", "VRButton", nullptr);
+    for (int i = 0; i < 4; ++i) {
+        self.vrButton.positionAndscale[i].position.x = 240.0f;
+        self.vrButton.positionAndscale[i].position.y = 190.0f;
+        self.vrButton.positionAndscale[i].scale.x = 0.8f;
+        self.vrButton.positionAndscale[i].scale.z = 0.8f;
+    }
+    self.vrButton.SetPosition(0.0f);
+
     Text::Info info;
     RKSYS::Mgr* rksysMgr = RKSYS::Mgr::sInstance;
     u32 vr = 0;
