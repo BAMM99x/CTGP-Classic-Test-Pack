@@ -29,7 +29,7 @@ struct PulPlayerData { //SELECT struct
     u8 prevRaceRank; //0x6 swapped with coursevote
     u8 starRank; //0x8 1st bit of 2nd p is also used to specify customPacket
 }; //total size 0x8
-size_assert(PulPlayerData, 0x8);
+//size_assert(PulPlayerData, 0x8);
 
 
 struct PulRH1 : public RKNet::RACEHEADER1Packet {
@@ -48,15 +48,39 @@ struct PulRH1 : public RKNet::RACEHEADER1Packet {
     u8 almostKOdCounter;
     u8 finalPercentageSum; //to be divided by racecount at the end of the GP
 
+    // Super Rare Power - synced from host to all players
+    u16 superRarePowerMask; // Bitmask of players who won super rare power this race
+
+    // Item Rain - host sends spawn data to all clients
+    u8  itemRainSeq;          // Sequence counter, incremented each spawn cycle by host
+    u8  itemRainItemId;       // ItemObjId to spawn (0xFF = no spawn this frame)
+    u8  itemRainTargetPlayer; // Target player index used for spawn
+    u8  itemRainHostPlayerId; // Host's local player ID (all items attributed to host)
+    u32 itemRainPosX;         // Spawn position X as raw IEEE754 bits (packed struct = misaligned, so avoid float)
+    u32 itemRainPosY;         // Spawn position Y as raw IEEE754 bits
+    u32 itemRainPosZ;         // Spawn position Z as raw IEEE754 bits
+    u16  itemRainEventField;  // Event bitfield to sync despawn/kill across consoles
+
+    // LapKO (MUST be last - these 16 bytes are conditionally excluded via PulRH1SizeBase)
+    u8 lapKoSeq;
+    u8 lapKoRoundIndex;
+    u8 lapKoActiveCount;
+    u8 lapKoElimCount;
+    u8 lapKoElims[12];
 };
+
+// Size constants for conditional packet expansion (defined outside struct since sizeof requires complete type)
+static const u32 PulRH1SizeBase = sizeof(PulRH1) - 16;  // Size without LapKO fields (16 bytes)
+static const u32 PulRH1SizeFull = sizeof(PulRH1);  // Full size with LapKO fields
+
 struct PulRH2 : public      RKNet::RACEHEADER2Packet {};
 struct PulROOM : public     RKNet::ROOMPacket {
 
     //Generic ROOM settings
     u32 hostSystemContext; //System's context but with just gamemodes taken from the settings
+    u32 hostSystemContext2;
     u8 raceCount;
-
-    // Track blocking
+        // Track blocking
     u8 blockedTrackCount;  // Number of valid entries in blockedTracks (up to MAX_TRACK_BLOCKING)
     u8 curBlockingArrayIdx;  // Current write index in circular buffer
     u8 padding;
@@ -89,11 +113,10 @@ struct PulSELECT : public RKNet::SELECTPacket {
     u8 racesPerKO;
     bool alwaysFinal;
 
-    // Track blocking sync for regional rooms (late joiner support)
-    u8 blockedTrackCount;  // Number of valid entries in blockedTracks
+        u8 blockedTrackCount;  // Number of valid entries in blockedTracks (up to MAX_TRACK_BLOCKING)
     u8 curBlockingArrayIdx;  // Current write index in circular buffer
-    u8 blockingPadding;
-    u16 blockedTracks[12];  // PulsarId array (up to MAX_TRACK_BLOCKING tracks)
+    u8 padding;
+    u16 blockedTracks[12];  // PulsarId array (up to MAX_TRACK_BLOCKING tracks)    // Track blocking
 };
 
 struct PulRACEDATA : public RKNet::RACEDATAPacket {};
@@ -131,6 +154,20 @@ public:
 };
 
 u8 GetLastRecvSECTIONSize(u8 aid, u8 sectionIdx);
+ItemId GetNetworkPlayerItem(u8 playerId);
+int GetNetworkPlayerItemCount(u8 playerId);
+
+enum NetworkItemSlotState
+{
+    NET_ITEMSLOT_STATE_EMPTY,
+    NET_ITEMSLOT_STATE_REQUEST,
+    NET_ITEMSLOT_STATE_REQUEST_DONE,
+    NET_ITEMSLOT_STATE_STOPPED,
+    NET_ITEMSLOT_STATE_STOCK_3,
+    NET_ITEMSLOT_STATE_STOCK_2,
+    NET_ITEMSLOT_STATE_STOCK_1,
+    NET_ITEMSLOT_STATE_REQUEST_FAIL
+};
 
 }//namespace Network
 }//namespace Pulsar

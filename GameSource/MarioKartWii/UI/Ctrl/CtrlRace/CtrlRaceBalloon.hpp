@@ -43,6 +43,7 @@ class CtrlRaceNameBalloon : public LayoutUIControl {
     void UpdateInfo(u8 hudSlotId); //807f0044
     void UpdatePosition(u8 nameSlotId); //807f1094
 
+public:
     u8 unknown_0x174[0x17C - 0x174];
     bool isOnline; //0x174
     u8 hudSlotId; //0x175

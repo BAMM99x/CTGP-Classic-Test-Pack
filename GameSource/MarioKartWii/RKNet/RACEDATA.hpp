@@ -13,6 +13,7 @@ struct RACEDATAPacket {
     static const u32 idx = 4;
     u8 _[0x40];
 };
+#pragma pack(pop)
 /*
 struct RACEDATAPacket {
 
